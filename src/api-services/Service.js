@@ -1,4 +1,4 @@
-const baseUrl = "http://localhost:5000";
+const baseUrl = "https://lacfinance-api.azurewebsites.net";
 //const token = sessionStorage.getItem("secretToken");
 
 export async function get(url) {

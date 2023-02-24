@@ -1,6 +1,6 @@
 export const get = async (url = "") => {
   let data = {};
-  await fetch(`http://localhost:5000/` + url, {
+  await fetch(`https://lacfinance-api.azurewebsites.net/` + url, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
@@ -15,7 +15,7 @@ export const get = async (url = "") => {
 };
 
 export const post = async (url = "", requestBody = {}) => {
-  return await fetch(`http://localhost:5000/` + url, {
+  return await fetch(`https://lacfinance-api.azurewebsites.net/` + url, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
