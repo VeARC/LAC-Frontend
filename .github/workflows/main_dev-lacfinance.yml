@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy Node.js app to Azure Web App - Dev-LACFinance
+name: Build and deploy Node.js app to Azure Web App - dev-lacfinance
 
 on:
   push:
@@ -22,11 +22,10 @@ jobs:
           node-version: '18.x'
 
       - name: npm install, build, and test
-        env:
-          CI: false
         run: |
           npm install
           npm run build --if-present
+          npm run test --if-present
       
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v2
@@ -51,7 +50,7 @@ jobs:
         uses: azure/webapps-deploy@v2
         id: deploy-to-webapp
         with:
-          app-name: 'Dev-LACFinance'
+          app-name: 'dev-lacfinance'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_ED9503B47A1444308DAC6FA3A174C84C }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_C09D9E19A3F6462F81F62A8A45BF1F60 }}
           package: .
