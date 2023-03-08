@@ -1,477 +1,73 @@
 import React, { Component } from "react";
 import "../../components/common/Common.css";
 import {
-  Button,
-  Grid,
   withStyles,
-  Select,
-  MenuItem,
   useMediaQuery,
-  FormControl,
-  InputLabel,
 } from "@material-ui/core";
 import { withRouter } from "react-router-dom";
-import Loader from "../../components/loader/Loader";
-import { AgGridReact } from "ag-grid-react";
-import "ag-grid-community/dist/styles/ag-grid.css";
-import "ag-grid-community/dist/styles/ag-theme-alpine.css";
-import ActionRenderer from "../../components/common/ActionRenderer";
 import { useStyles } from "../../components/common/useStyles";
-import { create, get, remove, search } from "../../api-services/Service";
-import DeleteConfirmation from "../../components/modal/DeleteConfirmation";
-import CommonFunc from "../../components/common/CommonFunc";
-import StatusBar from "../../services/snackbarService";
+import { PowerBIEmbed } from 'powerbi-client-react';
+import { models } from 'powerbi-client';
 
 const withMediaQuery =
   (...args) =>
-  (Component) =>
-  (props) => {
-    const mediaQuery = useMediaQuery(...args);
-    return <Component mediaQuery={mediaQuery} {...props} />;
-  };
+    (Component) =>
+      (props) => {
+        const mediaQuery = useMediaQuery(...args);
+        return <Component mediaQuery={mediaQuery} {...props} />;
+      };
 
 class Dashboard extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      PortCoId: null,
-      ShareClassId: null,
-      FundId: null,
-      Year: null,
-      Quarter: null,
-      portCoDetails: [],
-      fundTypes: [],
-      shareClasses: [],
-      years: [],
-      errorMessage: null,
-      loading: false,
-      userId: null,
-      open: false,
-      showConfirm: false,
-      recordId: 0,
-      cashFlowData: {},
-      openStatusBar: false,
-      severity: "success",
-      message: "",
-      columnDefs: [
-        {
-          headerName: "PortoCo Name",
-          field: "PortCoName",
-          cellStyle: { "text-align": "center" },
-        },
-        {
-          headerName: "Fund Type",
-          field: "FundType",
-          cellStyle: { "text-align": "center" },
-        },
-        {
-          headerName: "Share Class",
-          field: "ShareClass",
-          cellStyle: { "text-align": "center" },
-        },
-        {
-          headerName: "Start Date",
-          field: "Date",
-          cellStyle: { "text-align": "center" },
-        },
-        {
-          headerName: "Investment Cost",
-          field: "InvestmentCost",
-          cellStyle: { "text-align": "center" },
-        },
-        {
-          headerName: "Estimated Value",
-          field: "InvEstimatedValue",
-          cellStyle: { "text-align": "center" },
-        },
-        {
-          headerName: "Actions",
-          field: "Actions",
-          sorting: false,
-          filter: false,
-          cellRenderer: "actionRenderer",
-          cellStyle: { "text-align": "center" },
-        },
-      ],
-      context: { componentParent: this },
-      frameworkComponents: { actionRenderer: ActionRenderer },
-      rowData: [],
-      defaultColDef: {
-        flex: window.innerWidth <= 600 ? 0 : 1,
-        sortable: true,
-        resizable: true,
-        filter: true,
-      },
-      rowClassRules: {
-        "grid-row-even": function (params) {
-          return params.node.rowIndex % 2 === 0;
-        },
-        "grid-row-odd": function (params) {
-          return params.node.rowIndex % 2 !== 0;
-        },
-      },
-    };
+    this.state = {}
   }
-
-  addCashFlowDetails = () => {
-    this.setState({ open: true });
-  };
-
-  handleClose = () => {
-    this.setState({ open: false, cashFlowData: { RecordId: 0 } });
-  };
-
-  handleConfirmClose = () => {
-    this.setState({ showConfirm: false, recordId: 0 });
-  };
-
-  onAddCashFlow = () => {
-    this.setState({
-      open: false,
-      openStatusBar: true,
-      severity: "success",
-      message: "Details saved succesfully",
-      cashFlowData: { RecordId: 0 },
-    });
-    this.getCashFlowDetails();
-  };
-
-  getPortCoDetails = () => {
-    get("/portCoDetails").then((response) => {
-      this.setState({ portCoDetails: response });
-    });
-  };
-
-  getFundTypes = () => {
-    get("/fundTypes").then((response) => {
-      this.setState({ fundTypes: response });
-    });
-  };
-
-  getShareClasses = () => {
-    get("/shareClass").then((response) => {
-      this.setState({ shareClasses: response });
-    });
-  };
-
-  getYears = () => {
-    get("/cashFlow/getDistinctYears").then((response) => {
-      this.setState({ years: response });
-    });
-  };
-
-  getCashFlowDetails = () => {
-    get("/cashFlow").then((response) => {
-      response.map((data, index) => {
-        response[index].Date = CommonFunc.getDate(data.Date);
-      });
-      this.setState({ rowData: response });
-    });
-  };
-
-  searchCashFlowDetails = () => {
-    let startMMDD, endMMDD;
-    switch (this.state.Quarter) {
-      case "Q1":
-        startMMDD = "01/01/";
-        endMMDD = "03/31/";
-        break;
-      case "Q2":
-        startMMDD = "04/01/";
-        endMMDD = "06/30/";
-        break;
-      case "Q3":
-        startMMDD = "07/01/";
-        endMMDD = "09/30/";
-        break;
-      case "Q4":
-        startMMDD = "10/01/";
-        endMMDD = "12/31/";
-        break;
-      default:
-        startMMDD = "01/01/";
-        endMMDD = "12/31/";
-        break;
-    }
-
-    let input = {
-      PortCoId: Number(this.state.PortCoId),
-      FundId: Number(this.state.FundId),
-      ShareClassId: Number(this.state.ShareClassId),
-      startDate: this.state.Year ? startMMDD + this.state.Year : null,
-      endDate: this.state.Year ? endMMDD + this.state.Year : null,
-    };
-    create("/cashFlow/searchCashFlows", input).then((response) => {
-      response.map((data, index) => {
-        response[index].Date = CommonFunc.getDate(data.Date);
-      });
-      this.setState({ rowData: response });
-    });
-  };
 
   componentDidMount() {
     let loggedInUser = sessionStorage.getItem("loggedInUser");
 
     if (loggedInUser) {
-    //   this.setState({ loading: true });
-    //   this.getPortCoDetails();
-    //   this.getFundTypes();
-    //   this.getShareClasses();
-    //   this.getCashFlowDetails();
-    //   this.getYears();
-    //   this.setState({ loading: false });
     } else {
       const { history } = this.props;
       if (history) history.push("/Home");
     }
   }
 
-  editRowData = (row) => {
-    this.setState({ open: true, cashFlowData: row });
-  };
-
-  deleteRowData = (row) => {
-    this.setState({ showConfirm: true, recordId: row.RecordId });
-  };
-
-  deleteRecord = () => {
-    this.setState({ showConfirm: false, recordId: 0 });
-    remove("/cashFlow/deleteCashFlow", this.state.recordId).then((response) => {
-      this.getCashFlowDetails();
-    });
-  };
-
-  handleChange = (event) => {
-    const { name, value } = event.target;
-    this.setState({ [name]: value });
-  };
-
-  reset = () => {
-    this.setState({
-      PortCoId: null,
-      ShareClassId: null,
-      FundId: null,
-      Year: null,
-      Quarter: null,
-    });
-  };
-
-  clearSearchInput = () => {
-    this.reset();
-  };
-
   render() {
     const { classes, mediaQuery } = this.props;
 
-    let portCoDetails = this.state.portCoDetails.map((portCo) => (
-      <MenuItem value={portCo.PortCoId}>{portCo.PortCoName}</MenuItem>
-    ));
-    let fundTypes = this.state.fundTypes.map((fundType) => (
-      <MenuItem value={fundType.FundId}>{fundType.FundType}</MenuItem>
-    ));
-    let shareClasses = this.state.shareClasses.map((shareClass) => (
-      <MenuItem value={shareClass.ShareClassId}>
-        {shareClass.ShareClass}
-      </MenuItem>
-    ));
-    let years = this.state.years.map((year) => (
-      <MenuItem value={year.Year}>{year.Year}</MenuItem>
-    ));
-
     return (
       <div>
-        {this.state.loading ? (
-          <Loader />
-        ) : (
-          <div>
-            <Grid container spacing={0}>
-              <Grid item xs={3}>
-                <h2 className="header-text-color">Power BI Dashboard</h2>
-              </Grid>
-              {/* <Grid item xs={9} style={{ margin: "auto" }}>
-                <Button
-                  className={classes.customButtonPrimary}
-                  variant="contained"
-                  style={{ float: "right" }}
-                  color="primary"
-                  onClick={this.addCashFlowDetails}
-                  size="medium"
-                >
-                  Add Cash Flow
-                </Button>
-              </Grid> */}
-            </Grid>
-            {/* <Grid container spacing={2}>
-              <Grid item xs={3}>
-                <FormControl fullWidth variant="outlined" size="small">
-                  <InputLabel
-                    style={{ fontFamily: "poppins" }}
-                    id="demo-simple-select-label"
-                  >
-                    PortCo Name
-                  </InputLabel>
-                  <Select
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    value={this.state.PortCoId}
-                    label="PortCo Name"
-                    onChange={this.handleChange}
-                    name="PortCoId"
-                    style={{ backgroundColor: "#f9f9f9" }}
-                  >
-                    <MenuItem value="0">All</MenuItem>
-                    {portCoDetails}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={3}>
-                <FormControl fullWidth variant="outlined" size="small">
-                  <InputLabel
-                    style={{ fontFamily: "poppins" }}
-                    id="demo-simple-select-label"
-                  >
-                    Fund Type
-                  </InputLabel>
-                  <Select
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    value={this.state.FundId}
-                    label="Fund Type"
-                    onChange={this.handleChange}
-                    name="FundId"
-                    style={{ backgroundColor: "#f9f9f9" }}
-                  >
-                    <MenuItem value="0">All</MenuItem>
-                    {fundTypes}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={3}>
-                <FormControl fullWidth variant="outlined" size="small">
-                  <InputLabel
-                    style={{ fontFamily: "poppins" }}
-                    id="demo-simple-select-label"
-                  >
-                    Share Class
-                  </InputLabel>
-                  <Select
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    value={this.state.ShareClassId}
-                    label="Share Class"
-                    onChange={this.handleChange}
-                    name="ShareClassId"
-                    style={{ backgroundColor: "#f9f9f9" }}
-                  >
-                    <MenuItem value="0">All</MenuItem>
-                    {shareClasses}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={3}>
-                <FormControl fullWidth variant="outlined" size="small">
-                  <InputLabel
-                    style={{ fontFamily: "poppins" }}
-                    id="demo-simple-select-label"
-                  >
-                    Year
-                  </InputLabel>
-                  <Select
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    value={this.state.Year}
-                    label="Year"
-                    onChange={this.handleChange}
-                    name="Year"
-                    style={{ backgroundColor: "#f9f9f9" }}
-                  >
-                    <MenuItem value="0">All</MenuItem>
-                    {years}
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={3}>
-                <FormControl fullWidth variant="outlined" size="small">
-                  <InputLabel
-                    style={{ fontFamily: "poppins" }}
-                    id="demo-simple-select-label"
-                  >
-                    Quarter
-                  </InputLabel>
-                  <Select
-                    labelId="demo-simple-select-label"
-                    id="demo-simple-select"
-                    value={this.state.Quarter}
-                    label="Quarter"
-                    onChange={this.handleChange}
-                    name="Quarter"
-                    style={{ backgroundColor: "#f9f9f9" }}
-                  >
-                    <MenuItem value="0">All</MenuItem>
-                    <MenuItem value="Q1">Q1</MenuItem>
-                    <MenuItem value="Q2">Q2</MenuItem>
-                    <MenuItem value="Q3">Q3</MenuItem>
-                    <MenuItem value="Q4">Q4</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item>
-                <Button
-                  fullWidth
-                  className={classes.customButtonSecondary}
-                  variant="contained"
-                  color="primary"
-                  onClick={this.clearSearchInput}
-                  size="medium"
-                >
-                  Clear
-                </Button>
-              </Grid>
-              <Grid item>
-                <Button
-                  fullWidth
-                  className={classes.customButtonPrimary}
-                  variant="contained"
-                  color="primary"
-                  onClick={this.searchCashFlowDetails}
-                  size="medium"
-                >
-                  Search
-                </Button>
-              </Grid>
-            </Grid>
+        <PowerBIEmbed
+          embedConfig={{
+            type: 'report',
+            id: '7fc8384a-13bc-477b-9e56-69eeb8ff4799',
+            embedUrl: 'https://app.powerbi.com/reportEmbed?reportId=7fc8384a-13bc-477b-9e56-69eeb8ff4799&groupId=1cc6c026-388a-49c2-8188-05d26e49174a&w=2&config=eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9XQUJJLVVTLU5PUlRILUNFTlRSQUwtRy1QUklNQVJZLXJlZGlyZWN0LmFuYWx5c2lzLndpbmRvd3MubmV0IiwiZW1iZWRGZWF0dXJlcyI6eyJtb2Rlcm5FbWJlZCI6dHJ1ZSwidXNhZ2VNZXRyaWNzVk5leHQiOnRydWV9fQ%3d%3d',
+            accessToken: 'eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsIng1dCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiJodHRwczovL2FuYWx5c2lzLndpbmRvd3MubmV0L3Bvd2VyYmkvYXBpIiwiaXNzIjoiaHR0cHM6Ly9zdHMud2luZG93cy5uZXQvMzY5ZTk5ZWItMzhmNC00ZTBhLTg3ODYtMmJmOWNiODM1OTYyLyIsImlhdCI6MTY3ODI3MzQ4MiwibmJmIjoxNjc4MjczNDgyLCJleHAiOjE2NzgyNzgzNzksImFjY3QiOjAsImFjciI6IjEiLCJhaW8iOiJBVFFBeS84VEFBQUFEUHZKQ1RET3BMZUlkdjdYMTVEcHpScUFOV3daQTBtZlFwUG1yUWRXeUEyVDROMWJwVjBEQkxMa0VyR3NRb0NuIiwiYW1yIjpbInB3ZCJdLCJhcHBpZCI6Ijg3MWMwMTBmLTVlNjEtNGZiMS04M2FjLTk4NjEwYTdlOTExMCIsImFwcGlkYWNyIjoiMCIsImdpdmVuX25hbWUiOiJPdmF0aW8iLCJpcGFkZHIiOiIxNC4xNDMuMjA2LjIyOSIsIm5hbWUiOiJPdmF0aW8iLCJvaWQiOiJjNjg4NTY2Zi05MTUzLTQ1OWYtOGU1ZC04ZWJlNWIxZDVlZTciLCJwdWlkIjoiMTAwMzIwMDE5RDZBNDA4QiIsInJoIjoiMC5BUmNBNjVtZU52UTRDazZIaGl2NXk0TlpZZ2tBQUFBQUFBQUF3QUFBQUFBQUFBQVhBSm8uIiwic2NwIjoidXNlcl9pbXBlcnNvbmF0aW9uIiwic3ViIjoiX1l0NW91Zk9BMVlpb0pwY1I4RnUyMkhWYV9yMEFOVDBpTmM2dTNDX3NuayIsInRpZCI6IjM2OWU5OWViLTM4ZjQtNGUwYS04Nzg2LTJiZjljYjgzNTk2MiIsInVuaXF1ZV9uYW1lIjoiT3ZhdGlvQGxvbmdhcmMuY29tIiwidXBuIjoiT3ZhdGlvQGxvbmdhcmMuY29tIiwidXRpIjoiaEhUZ0lab3JyRUcyd3pDU3NsRVBBQSIsInZlciI6IjEuMCIsIndpZHMiOlsiNzI5ODI3ZTMtOWMxNC00OWY3LWJiMWItOTYwOGYxNTZiYmI4IiwiZmU5MzBiZTctNWU2Mi00N2RiLTkxYWYtOThjM2E0OWEzOGIxIiwiNjJlOTAzOTQtNjlmNS00MjM3LTkxOTAtMDEyMTc3MTQ1ZTEwIiwiYjc5ZmJmNGQtM2VmOS00Njg5LTgxNDMtNzZiMTk0ZTg1NTA5Il0sInhtc19wbCI6ImVuLVVTIn0.IW6WkIcDA1u38ssFdts9lntavnjp-iyhrsq70BnNmaT-LH51esdjnwiGyyT8d7BgohWYFYIORsqDqoBnoxCQje5zlYYQv6Nz8eRy2L-ZUILI9u2Qlm6-26d0i-X3lAcCyouRL5g-aHtc3hUxD1oMa6YMeEPKGRGH9p-SevnQ_YHVk7Ax1x8E2wcTyb0FiyFBOc24n4QMhBRaBdwtTD5wknRr39hjTXbJsz-AC201WZVuTzZU3x4LR4YofYJ0GFCUJO-p-D6ZsUOEmfXaC03BWoaVRx8iZP82ykX0SKFpIaew-s4Vxa3y0QPfHLBMQJ-SF7eTtr9wAzssROAaT8cvAg',
+            tokenType: models.TokenType.Aad,
+            settings: {
+              panes: {
+                filters: {
+                  expanded: false,
+                  visible: false
+                }
+              },
+              background: models.BackgroundType.Transparent,
+            }
+          }}
 
-            <Grid container spacing={0}>
-              <Grid item xs={12}>
-                <div
-                  className="ag-theme-alpine"
-                  style={{ width: "100%", height: 450, marginTop: 20 }}
-                >
-                  <AgGridReact
-                    columnDefs={this.state.columnDefs}
-                    rowData={this.state.rowData}
-                    onGridReady={this.onGridReady}
-                    defaultColDef={this.state.defaultColDef}
-                    frameworkComponents={this.state.frameworkComponents}
-                    context={this.state.context}
-                    pagination={true}
-                    gridOptions={this.gridOptions}
-                    paginationPageSize={20}
-                    components={this.state.components}
-                    rowClassRules={this.state.rowClassRules}
-                    suppressClickEdit={true}
-                  />
-                </div>
-              </Grid>
-            </Grid> */}
-          </div>
-        )}
-        <StatusBar
-          open={this.state.openStatusBar}
-          severity={this.state.severity}
-          message={this.state.message}
-          onClose={() => {
-            this.setState({ openStatusBar: false });
+          eventHandlers={
+            new Map([
+              ['loaded', function () { console.log('Report loaded'); }],
+              ['rendered', function () { console.log('Report rendered'); }],
+              ['error', function (event) { console.log(event.detail); }]
+            ])
+          }
+
+          cssClassName={"embed-container"}
+
+          getEmbeddedComponent={(embeddedReport) => {
+            window.report = embeddedReport;
           }}
         />
       </div>
