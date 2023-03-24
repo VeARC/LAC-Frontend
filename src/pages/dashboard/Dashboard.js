@@ -8,6 +8,8 @@ import { withRouter } from "react-router-dom";
 import { useStyles } from "../../components/common/useStyles";
 import { PowerBIEmbed } from 'powerbi-client-react';
 import { models } from 'powerbi-client';
+import reportData from '../../components/configs/PowerBIReport.json'
+import { create } from "../../api-services/Service";
 
 const withMediaQuery =
   (...args) =>
@@ -20,28 +22,58 @@ const withMediaQuery =
 class Dashboard extends Component {
   constructor(props) {
     super(props);
-    this.state = {}
+    this.state = {
+      embedToken: null
+    }
   }
 
   componentDidMount() {
     let loggedInUser = sessionStorage.getItem("loggedInUser");
     if (loggedInUser) {
+      this.generateAccessToken();
     } else {
       const { history } = this.props;
       if (history) history.push("/Home");
     }
   }
 
+  generateEmbedToken = (accessToken) => {
+    let data = {
+      accessLevel: 'View',
+      allowSaveAs: true,
+      groupId: reportData.CashFlowDetails.groupId,
+      reportId: reportData.CashFlowDetails.reportId,
+      accessToken: accessToken
+    }
+    create('/powerBIReport/generateEmbedToken', data)
+      .then((response) => {
+        if (response && response.token) {
+          this.setState({
+            embedToken: response.token
+          });
+        }
+      })
+  }
+
+  generateAccessToken = () => {
+    create('/powerBIReport/generateAccessToken')
+      .then((response) => {
+        if (response && response.access_token) {
+          this.generateEmbedToken(response.access_token);
+        }
+      })
+  }
+
   render() {
     return (
       <Fragment>
-        {/* <PowerBIEmbed
+        <PowerBIEmbed
           embedConfig={{
-            type: 'report',
-            id: '7fc8384a-13bc-477b-9e56-69eeb8ff4799',
-            embedUrl: 'https://app.powerbi.com/reportEmbed?reportId=7fc8384a-13bc-477b-9e56-69eeb8ff4799&groupId=1cc6c026-388a-49c2-8188-05d26e49174a&w=2&config=eyJjbHVzdGVyVXJsIjoiaHR0cHM6Ly9XQUJJLVVTLU5PUlRILUNFTlRSQUwtRy1QUklNQVJZLXJlZGlyZWN0LmFuYWx5c2lzLndpbmRvd3MubmV0IiwiZW1iZWRGZWF0dXJlcyI6eyJtb2Rlcm5FbWJlZCI6dHJ1ZSwidXNhZ2VNZXRyaWNzVk5leHQiOnRydWV9fQ%3d%3d',
-            accessToken: 'eyJrIjoiZmZiYjVmM2YtODk0Yy00MmU1LThhODQtOTc2Zjk3MzJhNDA0IiwidCI6IjM2OWU5OWViLTM4ZjQtNGUwYS04Nzg2LTJiZjljYjgzNTk2MiIsImMiOjN9',
-            tokenType: models.TokenType.Aad,
+            type: reportData.CashFlowDetails.type,
+            id: reportData.CashFlowDetails.reportId,
+            embedUrl: reportData.CashFlowDetails.embedUrl,
+            accessToken: this.state.embedToken,
+            tokenType: models.TokenType.Embed,
             settings: {
               panes: {
                 filters: {
@@ -62,20 +94,10 @@ class Dashboard extends Component {
           }
 
           cssClassName={"embed-container"}
-
           getEmbeddedComponent={(embeddedReport) => {
             window.report = embeddedReport;
           }}
-        /> */}
-
-        <iframe
-          title="Report Section"
-          width="100%"
-          height="650px"
-          src="https://app.powerbi.com/view?r=eyJrIjoiZmZiYjVmM2YtODk0Yy00MmU1LThhODQtOTc2Zjk3MzJhNDA0IiwidCI6IjM2OWU5OWViLTM4ZjQtNGUwYS04Nzg2LTJiZjljYjgzNTk2MiIsImMiOjN9"
-          frameborder="0"
-          allowFullScreen="true">
-        </iframe>
+        />
       </Fragment>
     );
   }
