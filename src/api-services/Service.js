@@ -1,4 +1,4 @@
-const baseUrl = "https://lacfinance-api.azurewebsites.net";
+const baseUrl = "https://dev-api-lacfinance.azurewebsites.net"; //"https://lacfinance-api.azurewebsites.net";
 //const token = sessionStorage.getItem("secretToken");
 
 export async function get(url) {
