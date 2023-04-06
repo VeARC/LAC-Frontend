@@ -146,6 +146,7 @@ class CashFlowDetails extends Component {
       severity: "success",
       message: "Details saved succesfully",
       cashFlowData: { RecordId: 0 },
+      loading: true,
     });
     this.getCashFlowDetails();
   };
@@ -179,7 +180,7 @@ class CashFlowDetails extends Component {
       response.map((data, index) => {
         response[index].Date = CommonFunc.getDate(data.Date);
       });
-      this.setState({ rowData: response });
+      this.setState({ rowData: response, loading: false });
     });
   };
 
@@ -227,6 +228,7 @@ class CashFlowDetails extends Component {
     let loggedInUser = sessionStorage.getItem("loggedInUser");
 
     if (loggedInUser) {
+      this.setState({ loading: true });
       this.getPortCoDetails();
       this.getFundTypes();
       this.getShareClasses();
@@ -247,7 +249,7 @@ class CashFlowDetails extends Component {
   };
 
   deleteRecord = () => {
-    this.setState({ showConfirm: false, recordId: 0 });
+    this.setState({ showConfirm: false, recordId: 0, loading: true });
     remove("/cashFlow/deleteCashFlow", this.state.recordId).then((response) => {
       this.getCashFlowDetails();
     });
@@ -259,8 +261,8 @@ class CashFlowDetails extends Component {
   };
 
   fileHandler = (event) => {
-    debugger;
     let fileObj = event.target.files[0];
+    event.target.value = '';
     if (fileObj) {
       this.setState({ loading: true, inputFile: fileObj });
       ExcelRenderer(fileObj, (err, resp) => {
@@ -270,6 +272,7 @@ class CashFlowDetails extends Component {
           let cols = resp.rows[0];
           if (this.checkExcelColumns(cols)) {
             let newRows = [];
+            let userId = sessionStorage.getItem("loggedInUser");
             resp.rows.slice(1).map((row, index) => {
               if (row && row !== "undefined") {
                 newRows.push({
@@ -279,6 +282,7 @@ class CashFlowDetails extends Component {
                   [cols[3]]: row[3],
                   [cols[4]]: row[4],
                   [cols[5]]: row[5],
+                  CreatedBy: userId,
                 });
               }
             });
@@ -292,6 +296,10 @@ class CashFlowDetails extends Component {
                 inputFile: null,
               });
             } else {
+              newRows.map((item, index) => {
+                if (item.Date.toString().indexOf('/') === -1 || item.Date.toString().indexOf('-') === -1)
+                  newRows[index].Date = CommonFunc.ExcelDateToJSDate(item.Date);
+              });
               if (this.validateRowData(newRows)) {
                 this.saveRowData(newRows);
               }
@@ -386,34 +394,15 @@ class CashFlowDetails extends Component {
   saveRowData = (rowData) => {
     create("/cashFlow/bulkUploadCashFlow", rowData)
       .then((response) => {
-        console.log(response);
-        if (response.statusCode && response.statusCode !== 200) {
-          this.setState({
-            openStatusBar: true,
-            severity: "error",
-            message: response.message,
-            loading: false,
-            inputFile: null,
-          });
-        } else {
-          this.getCashFlowDetails();
-          this.setState({
-            openStatusBar: true,
-            severity: "success",
-            message: "Cashflow details uploaded succesfully.",
-            loading: false,
-            inputFile: null,
-          });
-        }
-      })
-      .catch((err) => {
         this.setState({
           openStatusBar: true,
-          severity: "error",
-          message: "Some error occured",
-          loading: false,
+          severity: response.severity,
+          message: response.message,
+          loading: response.severity === 'error' ? false : true,
           inputFile: null,
         });
+        if (response.severity === 'success')
+          this.getCashFlowDetails();
       });
   };
 
