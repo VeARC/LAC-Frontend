@@ -317,6 +317,7 @@ class CashFlowDetails extends Component {
         message: "No file selected",
       });
     }
+    event.target.value = null;
   };
 
   //Check if column name is valid or invalid
@@ -383,16 +384,37 @@ class CashFlowDetails extends Component {
   };
 
   saveRowData = (rowData) => {
-    create("/cashFlow/bulkUploadCashFlow", rowData).then((response) => {
-      this.getCashFlowDetails();
-      this.setState({
-        openStatusBar: true,
-        severity: "success",
-        message: "Cashflow details uploaded succesfully.",
-        loading: false,
-        inputFile: null,
+    create("/cashFlow/bulkUploadCashFlow", rowData)
+      .then((response) => {
+        console.log(response);
+        if (response.statusCode && response.statusCode !== 200) {
+          this.setState({
+            openStatusBar: true,
+            severity: "error",
+            message: response.message,
+            loading: false,
+            inputFile: null,
+          });
+        } else {
+          this.getCashFlowDetails();
+          this.setState({
+            openStatusBar: true,
+            severity: "success",
+            message: "Cashflow details uploaded succesfully.",
+            loading: false,
+            inputFile: null,
+          });
+        }
+      })
+      .catch((err) => {
+        this.setState({
+          openStatusBar: true,
+          severity: "error",
+          message: "Some error occured",
+          loading: false,
+          inputFile: null,
+        });
       });
-    });
   };
 
   reset = () => {
@@ -474,6 +496,7 @@ class CashFlowDetails extends Component {
                   type="file"
                   accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel"
                   onChange={(e) => {
+                    e.preventDefault();
                     this.fileHandler(e);
                   }}
                 />
