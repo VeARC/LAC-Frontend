@@ -84,6 +84,6 @@ export default {
         if (month.toString().length <= 1)
             month = '0' + month
         let year = date[2];
-        return String(day + '-' + month + '-' + year)
+        return String(year + '-' + month + '-' + day)
     }
 }
