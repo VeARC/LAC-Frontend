@@ -669,7 +669,7 @@ class CashFlowDetails extends Component {
             <Grid item xs={12}>
               <div
                 className="ag-theme-alpine"
-                style={{ width: "100%", height: 450, marginTop: 20 }}
+                style={{ width: "100%", height: 700, marginTop: 20 }}
               >
                 <AgGridReact
                   columnDefs={this.state.columnDefs}
@@ -680,7 +680,7 @@ class CashFlowDetails extends Component {
                   context={this.state.context}
                   pagination={true}
                   gridOptions={this.gridOptions}
-                  paginationPageSize={20}
+                  paginationPageSize={40}
                   components={this.state.components}
                   rowClassRules={this.state.rowClassRules}
                   suppressClickEdit={true}
